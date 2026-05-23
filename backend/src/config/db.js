@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 /**
  * Configures and establishes connection to MongoDB using Mongoose.
- * Sets up listeners for post-connection lifecycle events.
+ * Sets up listeners for connection events.
  */
 const connectDB = async () => {
   try {
@@ -30,11 +30,10 @@ const connectDB = async () => {
     mongoose.connection.on('reconnected', () => {
       console.log('[Database] MongoDB connection successfully reconnected.');
     });
-
   } catch (error) {
     console.error(`[Database] MongoDB connection attempt failed: ${error.message}`);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+export default connectDB;
