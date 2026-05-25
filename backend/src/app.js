@@ -2,13 +2,13 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import { rateLimit } from 'express-rate-limit';
 
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import knowledgeRoutes from './routes/knowledge.routes.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
+import { requestLogger } from './middleware/request.logger.middleware.js';
 
 const app = express();
 
@@ -22,8 +22,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-const isProduction = process.env.NODE_ENV === 'production';
-app.use(morgan(isProduction ? 'combined' : 'dev'));
+// Apply custom request logger
+app.use(requestLogger);
 
 // ==========================================
 // 2. Body Parsers
@@ -34,17 +34,31 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // ==========================================
 // 3. Rate Limiting
 // ==========================================
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: {
     success: false,
-    message: 'Too many requests. Please try again after 15 minutes.',
+    message: 'Too many requests to the API. Please try again later.',
     data: null,
     error: { message: 'Rate limit exceeded' }
   }
 });
-app.use('/api/', apiLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // strict limit for auth
+  message: {
+    success: false,
+    message: 'Too many authentication attempts. Please try again later.',
+    data: null,
+    error: { message: 'Rate limit exceeded' }
+  }
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/v1/auth', authLimiter);
+
 
 // ==========================================
 // 4. Core Routes
