@@ -7,6 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import knowledgeRoutes from './routes/knowledge.routes.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -50,6 +51,7 @@ app.use('/api/', apiLimiter);
 // ==========================================
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/knowledge', knowledgeRoutes);
 
 // Base welcome route
 app.get('/', (req, res) => {
