@@ -25,6 +25,11 @@ const knowledgeSchema = new mongoose.Schema(
       enum: ['beginner', 'intermediate', 'advanced', 'expert'],
       lowercase: true,
       index: true
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true
     }
   },
   { timestamps: true }

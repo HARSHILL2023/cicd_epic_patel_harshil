@@ -5,6 +5,11 @@
  * Logs Method, Route, Timestamp, and sets up a response finish listener for Status
  */
 export const requestLogger = (req, res, next) => {
+  // Skip excessive logging in production unless necessary
+  if (process.env.NODE_ENV === 'production' && req.originalUrl.includes('/health')) {
+    return next();
+  }
+
   const start = Date.now();
   const timestamp = new Date().toISOString();
 

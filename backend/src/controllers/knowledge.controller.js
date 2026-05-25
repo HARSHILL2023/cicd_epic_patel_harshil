@@ -8,7 +8,7 @@ import asyncHandler from '../middleware/async.middleware.js';
 // @route   GET /api/v1/knowledge
 // @access  Public
 export const getAllItems = asyncHandler(async (req, res) => {
-  const filter = {};
+  const filter = { isDeleted: { $ne: true } };
   if (req.query.difficulty) filter.difficulty = req.query.difficulty.toLowerCase();
   if (req.query.topic) filter.topic = req.query.topic.toLowerCase();
 
@@ -22,7 +22,7 @@ export const getAllItems = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/knowledge/:id
 // @access  Public
 export const getItemById = asyncHandler(async (req, res) => {
-  const item = await KnowledgeItem.findById(req.params.id).lean();
+  const item = await KnowledgeItem.findOne({ _id: req.params.id, isDeleted: { $ne: true } }).lean();
   if (!item) {
     return sendResponse(res, 404, false, 'Knowledge item not found', null, { message: 'Invalid ID' });
   }
@@ -51,13 +51,17 @@ export const updateItem = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, 'Knowledge item updated successfully', { item });
 });
 
-// @desc    Delete knowledge item
+// @desc    Soft Delete knowledge item
 // @route   DELETE /api/v1/knowledge/:id
 // @access  Private/Admin
 export const deleteItem = asyncHandler(async (req, res) => {
-  const item = await KnowledgeItem.findByIdAndDelete(req.params.id);
+  const item = await KnowledgeItem.findOneAndUpdate(
+    { _id: req.params.id, isDeleted: { $ne: true } },
+    { isDeleted: true },
+    { new: true }
+  );
   if (!item) {
-    return sendResponse(res, 404, false, 'Knowledge item not found', null, { message: 'Invalid ID' });
+    return sendResponse(res, 404, false, 'Knowledge item not found', null, { message: 'Invalid ID or already deleted' });
   }
   return sendResponse(res, 200, true, 'Knowledge item deleted successfully');
 });
@@ -66,27 +70,31 @@ export const deleteItem = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/knowledge/stats/overview
 // @access  Public
 export const getStats = asyncHandler(async (req, res) => {
-  const totalRecords = await KnowledgeItem.countDocuments();
+  const activeRecords = await KnowledgeItem.countDocuments({ isDeleted: { $ne: true } });
+  const deletedRecords = await KnowledgeItem.countDocuments({ isDeleted: true });
 
   const byDifficulty = await KnowledgeItem.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
     { $group: { _id: '$difficulty', count: { $sum: 1 } } },
     { $sort: { count: -1 } }
   ]);
 
   const byTopic = await KnowledgeItem.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
     { $group: { _id: '$topic', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 10 }
   ]);
 
-  const latestRecords = await KnowledgeItem.find()
+  const latestRecords = await KnowledgeItem.find({ isDeleted: { $ne: true } })
     .sort({ createdAt: -1 })
     .limit(5)
     .select('instruction topic difficulty createdAt')
     .lean();
 
   return sendResponse(res, 200, true, 'Statistics fetched successfully', {
-    totalRecords,
+    totalActiveRecords: activeRecords,
+    totalDeletedRecords: deletedRecords,
     byDifficulty,
     mostUsedTopics: byTopic,
     latestRecords
