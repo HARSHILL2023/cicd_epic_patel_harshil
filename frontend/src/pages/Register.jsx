@@ -1,74 +1,98 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { register, clearError, clearSuccess } from '../store/slices/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../services/authService';
+import { toast } from 'react-toastify';
+import LoadingSpinner from '../components/LoadingSpinner';
 import './auth.css';
 
 const Register = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isLoading, error, isAuthenticated, successMessage } = useSelector((state) => state.auth);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await register({ name, email, password });
-      // Redirect to login page on successful registration
-      navigate('/login');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
     }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+    if (successMessage) {
+      toast.success(successMessage);
+      dispatch(clearSuccess());
+    }
+  }, [error, successMessage, dispatch]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dispatch(register(formData));
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2 className="auth-title">Create an Account</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-header">
+          <h2>Create Account</h2>
+          <p>Join the CI/CD platform</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label>Full Name</label>
-            <input 
-              type="text" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              required 
+            <label htmlFor="name">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="John Doe"
+              required
             />
           </div>
+
           <div className="form-group">
-            <label>Email Address</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required 
+            <label htmlFor="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="john@example.com"
+              required
             />
           </div>
+          
           <div className="form-group">
-            <label>Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              required 
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
             />
           </div>
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Register'}
+          
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? <LoadingSpinner /> : 'Sign Up'}
           </button>
         </form>
-        <div className="auth-link">
-          Already have an account? <Link to="/login">Login here</Link>
+        
+        <div className="auth-footer">
+          <p>Already have an account? <Link to="/login">Login here</Link></p>
         </div>
       </div>
     </div>
