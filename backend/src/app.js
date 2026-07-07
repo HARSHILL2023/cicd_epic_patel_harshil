@@ -7,6 +7,16 @@ import { rateLimit } from 'express-rate-limit';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import knowledgeRoutes from './routes/knowledge.routes.js';
+import workflowRoutes from './routes/workflow.routes.js';
+import infraRoutes from './routes/infra.routes.js';
+import searchRoutes from './routes/search.routes.js';
+import yamlRoutes from './routes/yaml.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
+import debugRoutes from './routes/debug.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import monitoringRoutes from './routes/monitoring.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import systemRoutes from './routes/system.routes.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 import { requestLogger } from './middleware/request.logger.middleware.js';
 
@@ -66,6 +76,16 @@ app.use('/api/v1/auth', authLimiter);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/knowledge', knowledgeRoutes);
+app.use('/api/v1/workflows', workflowRoutes);
+app.use('/api/v1/infra', infraRoutes);
+app.use('/api/v1/search', searchRoutes);
+app.use('/api/v1/yaml', yamlRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/debug', debugRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/monitoring', monitoringRoutes);
+app.use('/api/v1/system', systemRoutes);
+app.use('/api/v1', notificationRoutes); // Handles /notifications, /comments, /reviews
 
 // Base welcome route
 app.get('/', (req, res) => {

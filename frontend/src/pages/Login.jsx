@@ -1,63 +1,85 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { login, clearError, clearSuccess } from '../store/slices/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../services/authService';
+import { toast } from 'react-toastify';
+import LoadingSpinner from '../components/LoadingSpinner';
 import './auth.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isLoading, error, isAuthenticated, successMessage } = useSelector((state) => state.auth);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await login({ email, password });
-      // Redirect to home/dashboard on success
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials and try again.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
     }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+    if (successMessage) {
+      toast.success(successMessage);
+      dispatch(clearSuccess());
+    }
+  }, [error, successMessage, dispatch]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dispatch(login(formData));
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2 className="auth-title">Welcome Back</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-header">
+          <h2>Welcome Back</h2>
+          <p>Login to manage your CI/CD pipelines</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label>Email Address</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required 
+            <label htmlFor="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="admin@example.com"
+              required
             />
           </div>
+          
           <div className="form-group">
-            <label>Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required 
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
             />
           </div>
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? <LoadingSpinner /> : 'Sign In'}
           </button>
         </form>
-        <div className="auth-link">
-          Don't have an account? <Link to="/register">Register here</Link>
+        
+        <div className="auth-footer">
+          <p>Don't have an account? <Link to="/register">Register here</Link></p>
         </div>
       </div>
     </div>

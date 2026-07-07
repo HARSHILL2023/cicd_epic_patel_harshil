@@ -1,9 +1,7 @@
-import axios from 'axios';
-
-const API_URL = '/api/v1/auth';
+import api from '../api/axios';
 
 export const login = async (credentials) => {
-    const response = await axios.post(`${API_URL}/login`, credentials);
+    const response = await api.post('/auth/login', credentials);
     if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
     }
@@ -11,6 +9,6 @@ export const login = async (credentials) => {
 };
 
 export const register = async (userData) => {
-    const response = await axios.post(`${API_URL}/register`, userData);
+    const response = await api.post('/auth/register', userData);
     return response.data;
 };
